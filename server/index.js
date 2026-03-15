@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import { join, dirname } from 'path';
 import recipesRouter from './routes/recipes.js';
 import instacartRouter from './routes/instacart.js';
+import extractRouter from './routes/extract.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -12,11 +13,12 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' })); // images are base64-encoded
 
 // API routes
 app.use('/api/recipes', recipesRouter);
 app.use('/api/instacart', instacartRouter);
+app.use('/api/extract', extractRouter);
 
 // Serve built frontend in production
 if (process.env.NODE_ENV === 'production') {

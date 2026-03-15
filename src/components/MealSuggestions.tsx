@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { RecipeCard, RecipeDetail } from '../types';
+import { RecipeImport } from './RecipeImport';
 
 interface Props {
   addedRecipes: RecipeDetail[];
@@ -18,8 +19,7 @@ export function MealSuggestions({ addedRecipes, onAdd, onRemove }: Props) {
   const [loadingFeatured, setLoadingFeatured] = useState(false);
   const [loadingRecipeId, setLoadingRecipeId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [customUrl, setCustomUrl] = useState('');
-  const [activeSource, setActiveSource] = useState<'nyt' | 'newdadskitchen' | 'custom'>('nyt');
+  const [activeSource, setActiveSource] = useState<'nyt' | 'newdadskitchen' | 'import'>('import');
 
   const addedIds = new Set(addedRecipes.map((r) => r.id));
 
@@ -57,19 +57,6 @@ export function MealSuggestions({ addedRecipes, onAdd, onRemove }: Props) {
     } finally {
       setLoadingRecipeId(null);
     }
-  }
-
-  async function fetchCustomUrl() {
-    if (!customUrl.trim()) return;
-    const fakeCard: RecipeCard = {
-      id: customUrl.replace(/[^a-z0-9]/gi, '-').toLowerCase(),
-      title: 'Custom Recipe',
-      url: customUrl.trim(),
-      imageUrl: null,
-      source: 'nyt',
-    };
-    await fetchAndAdd(fakeCard);
-    setCustomUrl('');
   }
 
   const cards =
@@ -127,7 +114,7 @@ export function MealSuggestions({ addedRecipes, onAdd, onRemove }: Props) {
 
       {/* Source tabs */}
       <div className="flex gap-1 border-b border-gray-200">
-        {(['nyt', 'newdadskitchen', 'custom'] as const).map((src) => (
+        {(['import', 'nyt', 'newdadskitchen'] as const).map((src) => (
           <button
             key={src}
             onClick={() => setActiveSource(src)}
@@ -142,31 +129,16 @@ export function MealSuggestions({ addedRecipes, onAdd, onRemove }: Props) {
         ))}
       </div>
 
-      {/* Custom URL input */}
-      {activeSource === 'custom' && (
-        <div className="flex gap-2">
-          <input
-            className="flex-1 border rounded px-3 py-1.5 text-sm"
-            placeholder="Paste any recipe URL…"
-            value={customUrl}
-            onChange={(e) => setCustomUrl(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && fetchCustomUrl()}
-          />
-          <button
-            onClick={fetchCustomUrl}
-            disabled={!customUrl.trim()}
-            className="bg-blue-600 text-white rounded px-3 py-1.5 text-sm hover:bg-blue-700 disabled:opacity-50"
-          >
-            Add
-          </button>
-        </div>
+      {/* Import panel (URL / screenshot / text) */}
+      {activeSource === 'import' && (
+        <RecipeImport onImport={onAdd} />
       )}
 
-      {/* Error states */}
+      {/* Error states for scraped sources */}
       {error && (
         <p className="text-sm text-red-500 bg-red-50 rounded p-2">{error}</p>
       )}
-      {featured?.errors[activeSource as 'nyt' | 'newdadskitchen'] && (
+      {activeSource !== 'import' && featured?.errors[activeSource as 'nyt' | 'newdadskitchen'] && (
         <p className="text-sm text-yellow-700 bg-yellow-50 rounded p-2">
           Could not load {sourceLabel(activeSource)} recipes:{' '}
           {featured.errors[activeSource as 'nyt' | 'newdadskitchen']}
@@ -174,7 +146,7 @@ export function MealSuggestions({ addedRecipes, onAdd, onRemove }: Props) {
       )}
 
       {/* Recipe cards grid */}
-      {activeSource !== 'custom' && (
+      {activeSource !== 'import' && (
         <>
           {loadingFeatured ? (
             <div className="grid grid-cols-2 gap-2">
@@ -274,8 +246,8 @@ function RecipeCardUI({
 }
 
 function sourceLabel(src: string) {
+  if (src === 'import') return '➕ Import';
   if (src === 'nyt') return 'NYT Cooking';
   if (src === 'newdadskitchen') return "New Dad's Kitchen";
-  if (src === 'custom') return 'Custom URL';
   return src;
 }
