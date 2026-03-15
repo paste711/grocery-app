@@ -1,17 +1,18 @@
 import { useMemo } from 'react';
 import type { Staple, PromptedItem, GroceryItem, RecipeDetail } from '../types';
 
-/** Builds the final grocery list from all sources, grouped by category. */
+/** Builds the final grocery list from all sources, in order. */
 export function useGroceryList(
   staples: Staple[],
   promptedItems: PromptedItem[],
+  searchItems: GroceryItem[],
   addedRecipes: RecipeDetail[],
   manualItems: GroceryItem[]
 ): GroceryItem[] {
   return useMemo(() => {
     const items: GroceryItem[] = [];
 
-    // Staples — all always included
+    // 1. Staples — always included
     for (const s of staples) {
       items.push({
         id: `staple-${s.id}`,
@@ -23,7 +24,7 @@ export function useGroceryList(
       });
     }
 
-    // Prompted items the user said they need
+    // 2. Usuals — only checked ones
     for (const p of promptedItems) {
       if (p.included) {
         items.push({
@@ -37,7 +38,10 @@ export function useGroceryList(
       }
     }
 
-    // Recipe ingredients
+    // 3. Search / What else items
+    items.push(...searchItems);
+
+    // 4. Recipe ingredients
     for (const recipe of addedRecipes) {
       for (const ing of recipe.ingredients) {
         items.push({
@@ -51,11 +55,11 @@ export function useGroceryList(
       }
     }
 
-    // Manual additions
+    // 5. Manual additions (from the cart panel quick-add)
     items.push(...manualItems);
 
     return items;
-  }, [staples, promptedItems, addedRecipes, manualItems]);
+  }, [staples, promptedItems, searchItems, addedRecipes, manualItems]);
 }
 
 /** Group a flat list of grocery items by category. */

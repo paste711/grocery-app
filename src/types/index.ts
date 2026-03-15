@@ -1,12 +1,18 @@
 export interface GroceryItem {
   id: string;
   name: string;
+  /** Full display label, e.g. "Kraft Parmesan Cheese, Shredded, 5 oz" */
+  label?: string;
   quantity: number;
   unit?: string;
   category?: string;
-  source: 'staple' | 'prompted' | 'recipe' | 'manual';
+  source: 'staple' | 'prompted' | 'recipe' | 'manual' | 'search';
   recipeId?: string;
   checked?: boolean;
+  /** UPC barcode — sent to Instacart for precise product matching */
+  upc?: string | null;
+  /** Thumbnail from product search */
+  imageUrl?: string | null;
 }
 
 export interface Staple {

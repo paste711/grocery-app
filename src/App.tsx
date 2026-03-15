@@ -5,10 +5,11 @@ import { useLocalStorage } from './hooks/useLocalStorage';
 import { useGroceryList } from './hooks/useGroceryList';
 import { StaplesList } from './components/StaplesList';
 import { UsualsList } from './components/UsualsList';
+import { WhatElse } from './components/WhatElse';
 import { MealSuggestions } from './components/MealSuggestions';
 import { GroceryList } from './components/GroceryList';
 
-type Tab = 'staples' | 'meals' | 'list';
+type Tab = 'build' | 'meals' | 'list';
 
 export default function App() {
   const [staples, setStaples] = useLocalStorage<Staple[]>('staples', DEFAULT_STAPLES);
@@ -16,14 +17,15 @@ export default function App() {
     'prompted-items',
     DEFAULT_PROMPTED_ITEMS
   );
+  const [searchItems, setSearchItems] = useLocalStorage<GroceryItem[]>('search-items', []);
   const [addedRecipes, setAddedRecipes] = useLocalStorage<RecipeDetail[]>('added-recipes', []);
   const [manualItems, setManualItems] = useLocalStorage<GroceryItem[]>('manual-items', []);
 
-  const [activeTab, setActiveTab] = useState<Tab>('staples');
+  const [activeTab, setActiveTab] = useState<Tab>('build');
   const [instacartLoading, setInstacartLoading] = useState(false);
   const [instacartError, setInstacartError] = useState<string | null>(null);
 
-  const groceryList = useGroceryList(staples, promptedItems, addedRecipes, manualItems);
+  const groceryList = useGroceryList(staples, promptedItems, searchItems, addedRecipes, manualItems);
 
   function addRecipe(recipe: RecipeDetail) {
     setAddedRecipes((prev) => {
@@ -34,6 +36,14 @@ export default function App() {
 
   function removeRecipe(id: string) {
     setAddedRecipes((prev) => prev.filter((r) => r.id !== id));
+  }
+
+  function addSearchItem(item: GroceryItem) {
+    setSearchItems((prev) => [...prev, item]);
+  }
+
+  function removeSearchItem(id: string) {
+    setSearchItems((prev) => prev.filter((i) => i.id !== id));
   }
 
   function addManualItem(item: GroceryItem) {
@@ -57,14 +67,12 @@ export default function App() {
             name: i.name,
             quantity: i.quantity,
             unit: i.unit,
+            upc: i.upc ?? undefined,
           })),
         }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || `HTTP ${res.status}`);
-      }
-      // Open the Instacart cart link in a new tab
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
       window.open(data.url, '_blank', 'noopener,noreferrer');
     } catch (e) {
       setInstacartError(e instanceof Error ? e.message : 'Unknown error');
@@ -73,26 +81,78 @@ export default function App() {
     }
   }
 
+  // ── Mobile tab config ──────────────────────────────────────────────────
   const tabs: { id: Tab; label: string; emoji: string; badge?: number }[] = [
-    { id: 'staples', label: 'Staples', emoji: '🛒' },
-    { id: 'meals', label: 'Meals', emoji: '🍽', badge: addedRecipes.length || undefined },
-    { id: 'list', label: 'List', emoji: '📋', badge: groceryList.length || undefined },
+    { id: 'build', label: 'Build', emoji: '🛒' },
+    { id: 'meals', label: 'Recipes', emoji: '🍽', badge: addedRecipes.length || undefined },
+    { id: 'list', label: 'Cart', emoji: '📋', badge: groceryList.length || undefined },
   ];
+
+  // ── Shared panels ──────────────────────────────────────────────────────
+  const BuildPanel = (
+    <div className="space-y-5">
+      {/* 1. Staples */}
+      <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+        <StaplesList staples={staples} onChange={setStaples} />
+      </section>
+
+      {/* 2. Usuals */}
+      <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+        <UsualsList items={promptedItems} onChange={setPromptedItems} />
+      </section>
+
+      {/* 3. What else */}
+      <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+        <WhatElse
+          items={searchItems}
+          onAdd={addSearchItem}
+          onRemove={removeSearchItem}
+        />
+      </section>
+    </div>
+  );
+
+  const RecipesPanel = (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+      <MealSuggestions
+        addedRecipes={addedRecipes}
+        onAdd={addRecipe}
+        onRemove={removeRecipe}
+      />
+    </div>
+  );
+
+  const CartPanel = (
+    <div
+      className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex flex-col"
+      style={{ minHeight: '70vh' }}
+    >
+      <GroceryList
+        items={groceryList}
+        manualItems={manualItems}
+        onAddManual={addManualItem}
+        onRemoveManual={removeManualItem}
+        onSendToInstacart={sendToInstacart}
+        instacartLoading={instacartLoading}
+        instacartError={instacartError}
+      />
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-2xl">🥦</span>
             <div>
               <h1 className="font-bold text-gray-900 leading-tight">Weekly Grocery Planner</h1>
-              <p className="text-xs text-gray-400">Build your list → Send to Instacart</p>
+              <p className="text-xs text-gray-400">Staples · Usuals · What Else · Recipes → Instacart</p>
             </div>
           </div>
-          <div className="flex items-center gap-1 text-sm text-gray-500">
-            <span className="font-medium text-gray-700">{groceryList.length}</span> items ready
+          <div className="text-sm text-gray-500">
+            <span className="font-medium text-gray-700">{groceryList.length}</span> items
           </div>
         </div>
 
@@ -120,70 +180,19 @@ export default function App() {
       </header>
 
       {/* Main layout */}
-      <main className="max-w-5xl mx-auto px-4 py-6">
-        {/* Desktop: 3-column layout */}
-        <div className="hidden md:grid md:grid-cols-3 gap-6 items-start">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 space-y-6">
-            <StaplesList staples={staples} onChange={setStaples} />
-            <hr className="border-gray-100" />
-            <UsualsList items={promptedItems} onChange={setPromptedItems} />
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-            <MealSuggestions
-              addedRecipes={addedRecipes}
-              onAdd={addRecipe}
-              onRemove={removeRecipe}
-            />
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex flex-col" style={{ minHeight: '70vh' }}>
-            <GroceryList
-              items={groceryList}
-              manualItems={manualItems}
-              onAddManual={addManualItem}
-              onRemoveManual={removeManualItem}
-              onSendToInstacart={sendToInstacart}
-              instacartLoading={instacartLoading}
-              instacartError={instacartError}
-            />
-          </div>
+      <main className="max-w-6xl mx-auto px-4 py-6">
+        {/* Desktop: 3-column — Build (sections 1-3) | Recipes (section 4) | Cart */}
+        <div className="hidden md:grid md:grid-cols-[1fr_1fr_320px] gap-5 items-start">
+          <div>{BuildPanel}</div>
+          <div>{RecipesPanel}</div>
+          <div>{CartPanel}</div>
         </div>
 
         {/* Mobile: tab panels */}
         <div className="md:hidden">
-          {activeTab === 'staples' && (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 space-y-6">
-              <StaplesList staples={staples} onChange={setStaples} />
-              <hr className="border-gray-100" />
-              <UsualsList items={promptedItems} onChange={setPromptedItems} />
-            </div>
-          )}
-          {activeTab === 'meals' && (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-              <MealSuggestions
-                addedRecipes={addedRecipes}
-                onAdd={addRecipe}
-                onRemove={removeRecipe}
-              />
-            </div>
-          )}
-          {activeTab === 'list' && (
-            <div
-              className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex flex-col"
-              style={{ minHeight: '70vh' }}
-            >
-              <GroceryList
-                items={groceryList}
-                manualItems={manualItems}
-                onAddManual={addManualItem}
-                onRemoveManual={removeManualItem}
-                onSendToInstacart={sendToInstacart}
-                instacartLoading={instacartLoading}
-                instacartError={instacartError}
-              />
-            </div>
-          )}
+          {activeTab === 'build' && BuildPanel}
+          {activeTab === 'meals' && RecipesPanel}
+          {activeTab === 'list' && CartPanel}
         </div>
       </main>
     </div>

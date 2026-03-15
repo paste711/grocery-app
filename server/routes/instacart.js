@@ -27,11 +27,16 @@ router.post('/create-cart', async (req, res) => {
     return res.status(400).json({ error: 'items must be a non-empty array' });
   }
 
-  const lineItems = items.map((item) => ({
-    name: item.name,
-    quantity: item.quantity || 1,
-    unit: item.unit || 'each',
-  }));
+  const lineItems = items.map((item) => {
+    const li = {
+      name: item.name,
+      quantity: item.quantity || 1,
+      unit: item.unit || 'each',
+    };
+    // UPC enables exact product matching in Instacart Connect
+    if (item.upc) li.upcs = [item.upc];
+    return li;
+  });
 
   try {
     const response = await axios.post(

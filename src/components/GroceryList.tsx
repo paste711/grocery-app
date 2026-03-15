@@ -15,7 +15,8 @@ interface Props {
 
 const SOURCE_LABEL: Record<string, string> = {
   staple: '🛒',
-  prompted: '🔔',
+  prompted: '🔁',
+  search: '🔎',
   recipe: '🍴',
   manual: '✏️',
 };
@@ -157,13 +158,20 @@ export function GroceryList({
                   key={item.id}
                   className="flex items-center gap-2 px-2 py-1.5 rounded text-sm hover:bg-gray-50 group"
                 >
-                  <span className="text-xs">{SOURCE_LABEL[item.source]}</span>
-                  <span className="flex-1 text-gray-800">{item.name}</span>
-                  <span className="text-xs text-gray-400">
-                    {item.quantity}
-                    {item.unit ? ' ' + item.unit : ''}
+                  <span className="text-xs">{SOURCE_LABEL[item.source] ?? '·'}</span>
+                  <span className="flex-1 min-w-0">
+                    <span className="text-gray-800 truncate block">
+                      {(item as GroceryItem & { label?: string }).label ?? item.name}
+                    </span>
                   </span>
-                  {item.source === 'manual' && (
+                  <span className="text-xs text-gray-400 flex-shrink-0">
+                    {item.quantity}
+                    {item.unit && !((item as GroceryItem & { label?: string }).label) ? ' ' + item.unit : ''}
+                  </span>
+                  {item.upc && (
+                    <span className="text-xs text-gray-200 flex-shrink-0" title={`UPC ${item.upc}`}>🎯</span>
+                  )}
+                  {(item.source === 'manual' || item.source === 'search') && (
                     <button
                       onClick={() => onRemoveManual(item.id)}
                       className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 text-xs"
