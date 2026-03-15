@@ -14,25 +14,16 @@ export function StaplesList({ staples, onChange }: Props) {
   const [newUnit, setNewUnit] = useState('');
   const [newCat, setNewCat] = useState('Produce');
 
-  function toggleInclude(id: string) {
-    onChange(
-      staples.map((s) =>
-        s.id === id ? { ...s, alwaysInclude: !s.alwaysInclude } : s
-      )
-    );
-  }
-
   function remove(id: string) {
     onChange(staples.filter((s) => s.id !== id));
   }
 
   function addItem() {
     if (!newName.trim()) return;
-    const id = `s-${Date.now()}`;
     onChange([
       ...staples,
       {
-        id,
+        id: `s-${Date.now()}`,
         name: newName.trim(),
         quantity: parseFloat(newQty) || 1,
         unit: newUnit.trim() || undefined,
@@ -46,26 +37,25 @@ export function StaplesList({ staples, onChange }: Props) {
     setAdding(false);
   }
 
-  const always = staples.filter((s) => s.alwaysInclude);
-  const optional = staples.filter((s) => !s.alwaysInclude);
-
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-green-700 flex items-center gap-2">
-          <span>🛒</span> Weekly Staples
+        <h2 className="text-base font-semibold text-green-700 flex items-center gap-2">
+          <span>🛒</span> Staples
+          <span className="text-xs font-normal bg-green-100 text-green-600 rounded-full px-2 py-0.5">
+            {staples.length} always in cart
+          </span>
         </h2>
         <button
           onClick={() => setAdding(!adding)}
-          className="text-sm text-green-600 hover:text-green-800 font-medium"
+          className="text-xs text-green-600 hover:text-green-800 font-medium"
         >
           {adding ? 'Cancel' : '+ Add'}
         </button>
       </div>
 
-      <p className="text-xs text-gray-500">
-        Always-included items appear in every cart. Uncheck to demote to
-        "prompted" status.
+      <p className="text-xs text-gray-400 -mt-1">
+        These go into every cart automatically. Move something here only if you buy it every single week.
       </p>
 
       {adding && (
@@ -95,74 +85,44 @@ export function StaplesList({ staples, onChange }: Props) {
               onChange={(e) => setNewUnit(e.target.value)}
             />
             <select
-              className="flex-1 border rounded px-2 py-1 text-sm"
+              className="flex-1 border rounded px-1 py-1 text-xs"
               value={newCat}
               onChange={(e) => setNewCat(e.target.value)}
             >
-              {CATEGORIES.map((c) => (
-                <option key={c}>{c}</option>
-              ))}
+              {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
             </select>
           </div>
           <button
             onClick={addItem}
             className="w-full bg-green-600 text-white rounded py-1 text-sm hover:bg-green-700"
           >
-            Add Staple
+            Add to Staples
           </button>
         </div>
       )}
 
-      <div className="space-y-1">
-        {always.map((s) => (
-          <StapleRow key={s.id} staple={s} onToggle={toggleInclude} onRemove={remove} />
+      <div className="space-y-0.5">
+        {staples.map((s) => (
+          <div
+            key={s.id}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-gray-100 text-sm group"
+          >
+            <span className="w-2 h-2 rounded-full bg-green-400 flex-shrink-0" />
+            <span className="flex-1 font-medium text-gray-800">{s.name}</span>
+            <span className="text-gray-400 text-xs">
+              {s.quantity}{s.unit ? ' ' + s.unit : ''}
+            </span>
+            <span className="text-xs text-gray-300">{s.category}</span>
+            <button
+              onClick={() => remove(s.id)}
+              className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 text-xs ml-1"
+              title="Remove from staples"
+            >
+              ✕
+            </button>
+          </div>
         ))}
-        {optional.length > 0 && (
-          <>
-            <p className="text-xs text-gray-400 pt-2 pb-1 font-medium uppercase tracking-wide">
-              Not always included
-            </p>
-            {optional.map((s) => (
-              <StapleRow key={s.id} staple={s} onToggle={toggleInclude} onRemove={remove} />
-            ))}
-          </>
-        )}
       </div>
-    </div>
-  );
-}
-
-function StapleRow({
-  staple,
-  onToggle,
-  onRemove,
-}: {
-  staple: Staple;
-  onToggle: (id: string) => void;
-  onRemove: (id: string) => void;
-}) {
-  return (
-    <div
-      className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm group ${
-        staple.alwaysInclude ? 'bg-white border border-gray-100' : 'bg-gray-50 opacity-70'
-      }`}
-    >
-      <input
-        type="checkbox"
-        checked={staple.alwaysInclude}
-        onChange={() => onToggle(staple.id)}
-        className="accent-green-600"
-      />
-      <span className="flex-1 font-medium text-gray-800">{staple.name}</span>
-      <span className="text-gray-400 text-xs">
-        {staple.quantity} {staple.unit}
-      </span>
-      <button
-        onClick={() => onRemove(staple.id)}
-        className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 text-xs px-1"
-      >
-        ✕
-      </button>
     </div>
   );
 }

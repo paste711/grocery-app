@@ -11,18 +11,16 @@ export function useGroceryList(
   return useMemo(() => {
     const items: GroceryItem[] = [];
 
-    // Always-include staples
+    // Staples — all always included
     for (const s of staples) {
-      if (s.alwaysInclude) {
-        items.push({
-          id: `staple-${s.id}`,
-          name: s.name,
-          quantity: s.quantity,
-          unit: s.unit,
-          category: s.category,
-          source: 'staple',
-        });
-      }
+      items.push({
+        id: `staple-${s.id}`,
+        name: s.name,
+        quantity: s.quantity,
+        unit: s.unit,
+        category: s.category,
+        source: 'staple',
+      });
     }
 
     // Prompted items the user said they need

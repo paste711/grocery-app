@@ -4,7 +4,7 @@ import { DEFAULT_STAPLES, DEFAULT_PROMPTED_ITEMS } from './data/defaults';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useGroceryList } from './hooks/useGroceryList';
 import { StaplesList } from './components/StaplesList';
-import { PromptedItems } from './components/PromptedItems';
+import { UsualsList } from './components/UsualsList';
 import { MealSuggestions } from './components/MealSuggestions';
 import { GroceryList } from './components/GroceryList';
 
@@ -126,7 +126,7 @@ export default function App() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 space-y-6">
             <StaplesList staples={staples} onChange={setStaples} />
             <hr className="border-gray-100" />
-            <PromptedItems items={promptedItems} onChange={setPromptedItems} />
+            <UsualsList items={promptedItems} onChange={setPromptedItems} />
           </div>
 
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
@@ -156,7 +156,7 @@ export default function App() {
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 space-y-6">
               <StaplesList staples={staples} onChange={setStaples} />
               <hr className="border-gray-100" />
-              <PromptedItems items={promptedItems} onChange={setPromptedItems} />
+              <UsualsList items={promptedItems} onChange={setPromptedItems} />
             </div>
           )}
           {activeTab === 'meals' && (

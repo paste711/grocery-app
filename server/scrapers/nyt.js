@@ -39,9 +39,11 @@ export async function fetchNYTFeatured() {
     const imageEl = $(el).find('img').first();
     const imageUrl =
       imageEl.attr('src') || imageEl.attr('data-src') || null;
+    const description =
+      $(el).find('[class*="description"], [class*="summary"], [class*="byline"], p').first().text().trim() || null;
 
     if (title) {
-      recipes.push({ id: slugify(url), title, url, imageUrl, source: 'nyt' });
+      recipes.push({ id: slugify(url), title, url, imageUrl, description, source: 'nyt' });
     }
   });
 

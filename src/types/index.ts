@@ -43,7 +43,8 @@ export interface RecipeCard {
   url: string;
   imageUrl: string | null;
   source: 'nyt' | 'newdadskitchen';
-  description?: string;
+  /** Short 1-2 sentence description, if available from listing page */
+  description?: string | null;
 }
 
 export interface RecipeDetail extends RecipeCard {

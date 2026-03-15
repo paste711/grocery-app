@@ -59,6 +59,8 @@ export async function fetchNewDadsKitchenFeatured() {
         img.attr('data-src') ||
         img.attr('data-lazy-src') ||
         null;
+      const description =
+        $(el).find('[class*="excerpt"], [class*="description"], [class*="summary"], p').first().text().trim() || null;
 
       if (title && title.length > 3) {
         recipes.push({
@@ -66,6 +68,7 @@ export async function fetchNewDadsKitchenFeatured() {
           title,
           url: href,
           imageUrl,
+          description,
           source: 'newdadskitchen',
         });
       }
